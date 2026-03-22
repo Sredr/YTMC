@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, redirect
 from ytmusicapi import YTMusic
 import yt_dlp
-import os
 
 app = Flask(__name__)
 ytmusic = YTMusic()
@@ -10,10 +9,17 @@ ytmusic = YTMusic()
 def search():
     query = request.args.get('q')
     if not query:
-        return jsonify({"error": "No query provided"}), 400
+        return "Error: No query", 400
+
     results = ytmusic.search(query, filter="songs", limit=3)
-    simple_results = [{"id": r['videoId'], "title": r['title'], "artist": r['artists'][0]['name']} for r in results]
-    return jsonify(simple_results)
+
+    # Важлива зміна для Java ME!
+    # Замість JSON віддаємо звичайний текст, де пісні розділені "---"
+    text_response = ""
+    for r in results:
+        text_response += f"{r['videoId']}|{r['title']}|{r['artists'][0]['name']}---"
+
+    return text_response
 
 @app.route('/stream/<video_id>')
 def stream(video_id):
@@ -23,6 +29,5 @@ def stream(video_id):
         return redirect(info['url']) 
 
 if __name__ == '__main__':
-    # Render сам задає порт через змінні оточення
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    # Запускаємо на порті 5000 локально
+    app.run(host='0.0.0.0', port=5000)
